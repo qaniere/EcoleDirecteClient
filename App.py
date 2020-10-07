@@ -20,11 +20,19 @@ class EcoleDirecteClient(ApiCaller):
         login_status= self.login(username, password)
 
         if login_status == "Connection ok": 
-            print("Bienvenue")
+            self.menu()
         elif login_status == "Invalids credentials": 
-            print("Indentiants incorrects")
+            print("Vos identifiants sont incorrects")
         else: 
             print("Erreur serveur")
+
+    def menu(self):
+
+        """ Method which contain the menu of the app """
+
+        self.prenom = self.account_data['prenom'].lower().capitalize() #Convert BOB to Bob 
+        print(f"Bienvenue {self.prenom} !")
+
 
 if __name__ == "__main__":
 
