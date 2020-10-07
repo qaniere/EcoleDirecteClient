@@ -36,4 +36,4 @@ class EcoleDirecteClient(ApiCaller):
 
 if __name__ == "__main__":
 
-    app = EcoleDirecteClient()
+    app = EcoleDirecteClient("QuentinAniere", "Buster67")
