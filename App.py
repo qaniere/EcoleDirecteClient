@@ -48,7 +48,6 @@ class EcoleDirecteClient(ApiCaller):
             print(f"Bienvenue {self.first_name} !")
             print(""" 
             Que voulez vous faire ?
-
             1 - Afficher vos informations personnelles
             q - Quitter l'application
             """)
@@ -59,9 +58,14 @@ class EcoleDirecteClient(ApiCaller):
     def informations(self):
 
         self.clear_screen()
-        print("Vos informations :")
-        print("Dernière connexion :", self.account_data["lastConnexion"])
-        print("Votre classe :", self.account_data["profile"]["classe"]["libelle"])
+
+        print("Vos informations EcoleDirecte :")
+        print("  Nom complet :", self.first_name, self.account_data["nom"].upper())
+        print("  Classe :", self.account_data["profile"]["classe"]["libelle"])
+        print("  Dernière connexion :", self.account_data["lastConnexion"]) #TODO : Refactor date format
+        print("  Adresse e-mail :", self.account_data["email"])
+        print("  Régime :", self.account_data["modules"][10]["params"]["regime"]) #TODO (Afficher les jours)
+        print("  Numéro de carte de cantine :", self.account_data["modules"][0]["params"]["numeroBadge"])
         input("")
 
 
