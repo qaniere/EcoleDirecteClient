@@ -2,6 +2,7 @@ import os
 import json
 import time
 import getpass
+import platform
 import requests
 from ApiHandler import ApiCaller
 
@@ -26,12 +27,42 @@ class EcoleDirecteClient(ApiCaller):
         else: 
             print("Erreur serveur")
 
+
+    def clear_screen(self):
+
+        """ Method which clear screen, on Windows or Linux"""
+
+        if platform.system() == "Windows": command = "cls"
+        else: command = "clear"
+        os.system(command)
+
+
     def menu(self):
 
         """ Method which contain the menu of the app """
 
-        self.prenom = self.account_data['prenom'].lower().capitalize() #Convert BOB to Bob 
-        print(f"Bienvenue {self.prenom} !")
+        app_is_running = True
+        while app_is_running:
+            self.clear_screen()
+            self.first_name = self.account_data['prenom'].lower().capitalize() #Convert BOB to Bob 
+            print(f"Bienvenue {self.first_name} !")
+            print(""" 
+            Que voulez vous faire ?
+
+            1 - Afficher vos informations personnelles
+            q - Quitter l'application
+            """)
+            choice = input(">>> ")
+            if choice == "1": self.informations()
+
+
+    def informations(self):
+
+        self.clear_screen()
+        print("Vos informations :")
+        print("Dernière connexion :", self.account_data["lastConnexion"])
+        print("Votre classe :", self.account_data["profile"]["classe"]["libelle"])
+        input("")
 
 
 if __name__ == "__main__":
