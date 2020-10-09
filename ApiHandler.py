@@ -40,6 +40,8 @@ class ApiCaller:
 
         """ WIP - Method which return a json string with grades informations """
 
+        assert self.login == False, "You must use the login method before perfom any actions"
+
         url = 'https://api.ecoledirecte.com/v3/eleves/' + str(account_data['id']) + '/notes.awp?verbe=get&'
         data = 'data={"token": "' + account_token + '"}'
         request = requests.post(url, data=data)
