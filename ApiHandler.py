@@ -27,13 +27,13 @@ class ApiCaller:
             self.account_data = received_data["data"]["accounts"][0]
             return "Connection ok"
 
-        elif json.loads(server_response.text)["message"] == "Mot de passe invalide !":
+        elif json.loads(server_response.text)["code"] == 505:
         #HTTP requests was succesful but credentials are invaldids
 
             return "Invalids credentials"
         
         else:
-            print(server_response)
+            print(server_response.text)
             return "Server error"
 
     def get_grades(self, account_token, account_data):
