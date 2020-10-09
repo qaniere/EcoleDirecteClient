@@ -7,7 +7,7 @@ class ApiCaller:
     The method "login" has to be called before any other methods"""
 
     def __init__(self):
-        self.login_ok = False
+        pass
 
     def login(self, username:str, password:str):
 
@@ -22,7 +22,6 @@ class ApiCaller:
         #HTTP code which mean the request was succesfull and credentials was valid
 
             received_data = json.loads(server_response.text)
-            self.login_ok = True
             self.account_token = received_data["token"]
             self.account_data = received_data["data"]["accounts"][0]
             return "Connection ok"
@@ -36,14 +35,13 @@ class ApiCaller:
             print(server_response.text)
             return "Server error"
 
-    def get_grades(self, account_token, account_data):
+    def get_grades(self):
 
         """ WIP - Method which return a json string with grades informations """
 
-        assert self.login == False, "You must use the login method before perfom any actions"
-
-        url = 'https://api.ecoledirecte.com/v3/eleves/' + str(account_data['id']) + '/notes.awp?verbe=get&'
-        data = 'data={"token": "' + account_token + '"}'
+        url = 'https://api.ecoledirecte.com/v3/eleves/' + str(self.account_data['id']) + '/notes.awp?verbe=get&'
+        data = 'data={"token": "' + self.account_token + '"}'
         request = requests.post(url, data=data)
         data = json.loads(request.text)
+        self.notes = data["data"]["notes"]
         

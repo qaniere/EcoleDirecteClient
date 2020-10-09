@@ -49,10 +49,13 @@ class EcoleDirecteClient(ApiCaller):
             print(""" 
             Que voulez vous faire ?
             1 - Afficher vos informations personnelles
+            2 - Afficher vos notes 
             q - Quitter l'application
             """)
             choice = input(">>> ")
             if choice == "1": self.informations()
+            elif choice == "2": self.show_grades()
+            elif choice == "q": os.exit(0)
 
 
     def informations(self):
@@ -68,6 +71,15 @@ class EcoleDirecteClient(ApiCaller):
         print("  Numéro de carte de cantine :", self.account_data["modules"][0]["params"]["numeroBadge"])
         input("")
 
+    def show_grades(self):
+
+        self.clear_screen()
+        self.get_grades()
+        print("Voici vos notes :")
+        for note in self.notes:
+            print(note["devoir"], "(" + note["libelleMatiere"] + ") : ", note["valeur"] + "/" + note["noteSur"])
+        input()
+        
 
 if __name__ == "__main__":
 
