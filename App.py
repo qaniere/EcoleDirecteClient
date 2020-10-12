@@ -55,7 +55,7 @@ class EcoleDirecteClient(ApiCaller):
             choice = input(">>> ")
             if choice == "1": self.informations()
             elif choice == "2": self.show_grades()
-            elif choice == "q": os.exit(0)
+            elif choice == "q": exit(0)
 
 
     def informations(self):
