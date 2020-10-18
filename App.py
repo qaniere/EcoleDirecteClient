@@ -83,7 +83,9 @@ class EcoleDirecteClient(ApiCaller):
             
             assignment = {
                 "title": grade["devoir"],
-                "result": grade["valeur"] + "/" + grade["noteSur"]          
+                "result": grade["valeur"] + "/" + grade["noteSur"], 
+                "coefficient": grade["coef"],
+                "class_average": grade["moyenneClasse"]
             }
 
             if subject not in grades_dict:
@@ -95,13 +97,13 @@ class EcoleDirecteClient(ApiCaller):
         iteration = 0
         for key, value in grades_dict.items():
             iteration += 1
-            table_data.append([key, value[0]["title"] + " : " + value[0]["result"]])
+            table_data.append([key, f"{value[0]['title']} : {value[0]['result']} (Coef {value[0]['coefficient']} - Moyenne : {value[0]['class_average']})"])
             if len(value) > 1:
                 for assignment in value:
                     if assignment != value[0]:
-                        table_data.append(["    ", assignment["title"] + " : " + assignment["result"]])
+                        table_data.append(["    ",  f"{assignment['title']} : {assignment['result']} (Coef {assignment['coefficient']} - Moyenne : {assignment['class_average']})"])
             if iteration != len(grades_dict): 
-                table_data.append(["--------------------", "------------------------------------------------------------------"])
+                table_data.append(["--------------------", "--------------------------------------------------------------------"])
         table = AsciiTable(table_data)
         print (table.table)
         input()
