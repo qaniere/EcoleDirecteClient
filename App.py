@@ -5,6 +5,7 @@ import getpass
 import platform
 import requests
 from ApiHandler import ApiCaller
+from terminaltables import AsciiTable
 
 class EcoleDirecteClient(ApiCaller):
 
@@ -75,12 +76,35 @@ class EcoleDirecteClient(ApiCaller):
 
         self.clear_screen()
         self.get_grades()
-        print("Voici vos notes :")
-        for note in self.notes:
-            print(note["devoir"], "(" + note["libelleMatiere"] + ") : ", note["valeur"] + "/" + note["noteSur"])
-        input()
+        grades_dict = {}
+
+        for grade in self.grades:
+            subject =  grade["libelleMatiere"]
+            
+            assignment = {
+                "title": grade["devoir"],
+                "result": grade["valeur"] + "/" + grade["noteSur"]          
+            }
+
+            if subject not in grades_dict:
+                grades_dict[subject] = []
+            
+            grades_dict[subject].append(assignment)
+            table_data = [["Matière", "Notes"]]
         
+        iteration = 0
+        for key, value in grades_dict.items():
+            iteration += 1
+            table_data.append([key, value[0]["title"] + " : " + value[0]["result"]])
+            if len(value) > 1:
+                for assignment in value:
+                    if assignment != value[0]:
+                        table_data.append(["    ", assignment["title"] + " : " + assignment["result"]])
+            if iteration != len(grades_dict): 
+                table_data.append(["--------------------", "------------------------------------------------------------------"])
+        table = AsciiTable(table_data)
+        print (table.table)
+        input()
 
 if __name__ == "__main__":
-
     app = EcoleDirecteClient()

@@ -7,7 +7,7 @@ class ApiCaller:
     The method "login" has to be called before any other methods"""
 
     def __init__(self):
-        pass
+        self.grades = None
 
     def login(self, username:str, password:str):
 
@@ -37,11 +37,11 @@ class ApiCaller:
 
     def get_grades(self):
 
-        """ WIP - Method which return a json string with grades informations """
+        """Method wich get the grades and store it in self.grades"""
 
         url = 'https://api.ecoledirecte.com/v3/eleves/' + str(self.account_data['id']) + '/notes.awp?verbe=get&'
         data = 'data={"token": "' + self.account_token + '"}'
         request = requests.post(url, data=data)
         data = json.loads(request.text)
-        self.notes = data["data"]["notes"]
+        self.grades = data["data"]["notes"]
         
