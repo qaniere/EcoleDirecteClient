@@ -85,7 +85,8 @@ class EcoleDirecteClient(ApiCaller):
                 "title": grade["devoir"],
                 "result": grade["valeur"] + "/" + grade["noteSur"], 
                 "coefficient": grade["coef"],
-                "class_average": grade["moyenneClasse"]
+                "class_average": grade["moyenneClasse"],
+                "no_mandatory": grade["nonSignificatif"]
             }
 
             if subject not in grades_dict:
@@ -95,18 +96,56 @@ class EcoleDirecteClient(ApiCaller):
             table_data = [["Matière", "Notes"]]
         
         iteration = 0
+        averages = []
         for key, value in grades_dict.items():
-            iteration += 1
-            table_data.append([key, f"{value[0]['title']} : {value[0]['result']} (Coef {value[0]['coefficient']} - Moyenne : {value[0]['class_average']})"])
+        #Get subject and list of assignments
+        
+            products = []
+            terms = []
+            iteration += 1 #Allow to subject left
+            no_mandatory = ""
+            if value[0]["no_mandatory"]:
+                no_mandatory = "- Non significatif"
+            else:
+                grade_on_20 = self.convert_grade_to_20(value[0]["result"])
+                products.append(grade_on_20 * float(value[0]["coefficient"]))
+                terms.append(float(value[0]["coefficient"]))
+            table_data.append([key, f"{value[0]['title']} : {value[0]['result']} (Coef {value[0]['coefficient']} - Moyenne : {value[0]['class_average']} {no_mandatory})"])
             if len(value) > 1:
+            #If it still assignments 
                 for assignment in value:
+                    no_mandatory = ""
                     if assignment != value[0]:
-                        table_data.append(["    ",  f"{assignment['title']} : {assignment['result']} (Coef {assignment['coefficient']} - Moyenne : {assignment['class_average']})"])
+                    #Do not work again with the first one
+                        if assignment["no_mandatory"]:
+                            no_mandatory = "- Non significatif"
+                        else:
+                            grade_on_20 = self.convert_grade_to_20(assignment["result"])
+                            products.append(grade_on_20 * float(assignment["coefficient"]))
+                            terms.append(float(assignment["coefficient"]))
+                        table_data.append(["    ",  f"{assignment['title']} : {assignment['result']} (Coef {assignment['coefficient']} - Moyenne : {assignment['class_average']} {no_mandatory})"])
+            subject_average = round(sum(products) / sum(terms), 2)
+            averages.append(subject_average)
+            table_data.append(["Moyenne", str(subject_average)])
             if iteration != len(grades_dict): 
                 table_data.append(["--------------------", "--------------------------------------------------------------------"])
+            else:
+                table_data.append(["--------------------", "--------------------------------------------------------------------"])
+                table_data.append(["Moyenne générale", str(round(sum(averages) / len(averages), 2))])
         table = AsciiTable(table_data)
-        print (table.table)
+        print(table.table)
         input()
+
+    def convert_grade_to_20(self, grades):
+
+        """ Method wich convert x/y to x/20 """
+
+        grades = grades.replace(",", ".")
+        grades = grades.split("/")
+        for i in range(len(grades)): grades[i] = float(grades[i])
+        result = (grades[0] / grades[1]) * 20
+        return result
+
 
 if __name__ == "__main__":
     app = EcoleDirecteClient()
