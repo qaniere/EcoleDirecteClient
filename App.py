@@ -7,7 +7,7 @@ import requests
 from ApiHandler import ApiCaller
 from terminaltables import AsciiTable
 
-class EcoleDirecteClient(ApiCaller):
+class EcoleDirecteClient:
 
     """ An "wonderfool" Ecole Directe unofficial client"""
 
@@ -27,6 +27,43 @@ class EcoleDirecteClient(ApiCaller):
             print("Vos identifiants sont incorrects")
         else: 
             print("Erreur serveur")
+
+    def login(self, username:str, password:str):
+
+        """ Method which send credentials to server. Take the username and password in str format in argument. Return a json 
+        string with requests code and account data"""
+
+        backend_url = "https://api.ecoledirecte.com/v3/login.awp"
+        connection_data = 'data={"identifiant": "' + username + '", "motdepasse": "' + password + '"}'
+        server_response = requests.post(backend_url, data=connection_data)
+
+        if json.loads(server_response.text)["code"] == 200:
+        #HTTP code which mean the request was succesfull and credentials was valid
+
+            received_data = json.loads(server_response.text)
+            self.account_token = received_data["token"]
+            self.account_data = received_data["data"]["accounts"][0]
+            return "Connection ok"
+
+        elif json.loads(server_response.text)["code"] == 505:
+        #HTTP requests was succesful but credentials are invaldids
+
+            return "Invalids credentials"
+        
+        else:
+            print(server_response.text)
+            return "Server error"
+
+
+    def get_grades(self):
+
+        """Method wich get the grades and store it in self.grades"""
+
+        url = 'https://api.ecoledirecte.com/v3/eleves/' + str(self.account_data['id']) + '/notes.awp?verbe=get&'
+        data = 'data={"token": "' + self.account_token + '"}'
+        request = requests.post(url, data=data)
+        data = json.loads(request.text)
+        self.grades = data["data"]["notes"]
 
 
     def clear_screen(self):
@@ -72,20 +109,24 @@ class EcoleDirecteClient(ApiCaller):
         print("  Numéro de carte de cantine :", self.account_data["modules"][0]["params"]["numeroBadge"])
         input("")
 
+
     def show_grades(self):
+
+        """ Method which sort and display grade in a ASCII table"""
 
         self.clear_screen()
         self.get_grades()
         grades_dict = {}
 
         for grade in self.grades:
-            subject =  grade["libelleMatiere"]
-            
+        #Loop that create a dict key per subject with empty list as value, 
+        #then append each assignments to this list
+            subject = grade["libelleMatiere"]  
             assignment = {
                 "title": grade["devoir"],
                 "result": grade["valeur"] + "/" + grade["noteSur"], 
                 "coefficient": grade["coef"],
-                "class_average": grade["moyenneClasse"],
+                "class_average": grade["moyenneClasse"] + "/" + grade["noteSur"],
                 "no_mandatory": grade["nonSignificatif"]
             }
 
@@ -93,26 +134,31 @@ class EcoleDirecteClient(ApiCaller):
                 grades_dict[subject] = []
             
             grades_dict[subject].append(assignment)
-            table_data = [["Matière", "Notes"]]
-        
+              
         iteration = 0
         averages = []
+        table_data = [["Matière", "Notes"]]
         for key, value in grades_dict.items():
-        #Get subject and list of assignments
+        #Get subject and the list of assignments of this subject
         
-            products = []
+            products = [] 
             terms = []
             iteration += 1 #Allow to subject left
             no_mandatory = ""
             if value[0]["no_mandatory"]:
                 no_mandatory = "- Non significatif"
             else:
+            #Calculate and add to average only if it's a signifiant grade
                 grade_on_20 = self.convert_grade_to_20(value[0]["result"])
                 products.append(grade_on_20 * float(value[0]["coefficient"]))
                 terms.append(float(value[0]["coefficient"]))
+            
             table_data.append([key, f"{value[0]['title']} : {value[0]['result']} (Coef {value[0]['coefficient']} - Moyenne : {value[0]['class_average']} {no_mandatory})"])
+            #Key it's the subjet 
+
             if len(value) > 1:
-            #If it still assignments 
+            #If the subject has more than one asignements
+
                 for assignment in value:
                     no_mandatory = ""
                     if assignment != value[0]:
@@ -123,18 +169,21 @@ class EcoleDirecteClient(ApiCaller):
                             grade_on_20 = self.convert_grade_to_20(assignment["result"])
                             products.append(grade_on_20 * float(assignment["coefficient"]))
                             terms.append(float(assignment["coefficient"]))
+
                         table_data.append(["    ",  f"{assignment['title']} : {assignment['result']} (Coef {assignment['coefficient']} - Moyenne : {assignment['class_average']} {no_mandatory})"])
+
             subject_average = round(sum(products) / sum(terms), 2)
             averages.append(subject_average)
             table_data.append(["Moyenne", str(subject_average)])
-            if iteration != len(grades_dict): 
-                table_data.append(["--------------------", "--------------------------------------------------------------------"])
-            else:
-                table_data.append(["--------------------", "--------------------------------------------------------------------"])
+            #Calculation of the subject average
+            table_data.append(["--------------------", "-------------------------------------------------------------------------"])
+            if iteration == len(grades_dict): 
                 table_data.append(["Moyenne générale", str(round(sum(averages) / len(averages), 2))])
+
         table = AsciiTable(table_data)
         print(table.table)
         input()
+
 
     def convert_grade_to_20(self, grades):
 
