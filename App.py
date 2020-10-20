@@ -4,7 +4,6 @@ import time
 import getpass
 import platform
 import requests
-from ApiHandler import ApiCaller
 from terminaltables import AsciiTable
 
 class EcoleDirecteClient:
@@ -65,6 +64,28 @@ class EcoleDirecteClient:
         data = json.loads(request.text)
         self.grades = data["data"]["notes"]
 
+    
+    def fetch_timeline(self):
+
+        """ Method which return the four last elements of timeline """
+
+        url = 'https://api.ecoledirecte.com/v3/eleves/' + str(self.account_data['id']) + '/timeline.awp?verbe=get&'
+        data = 'data={"token": "' + self.account_token + '"}'
+        request = requests.post(url, data=data)
+        data = json.loads(request.text)
+        data = data["data"]
+        result = []
+        for i in range(4):
+            event_type = data[i]["typeElement"]
+            if event_type == "Note":
+                final_string = f"- Nouvelle note en {data[i]['soustitre'].lower().capitalize()}"
+            elif event_type == "VieScolaire":
+                final_string = f"- {data[i]['titre']} du {data[i]['date']} ({data[i]['contenu']})"
+            else:
+                final_string = "Event not implemted. Please open Github issue"
+            result.append(final_string)
+        return result
+
 
     def clear_screen(self):
 
@@ -82,14 +103,15 @@ class EcoleDirecteClient:
         app_is_running = True
         while app_is_running:
             self.clear_screen()
-            self.first_name = self.account_data['prenom'].lower().capitalize() #Convert BOB to Bob 
-            print(f"Bienvenue {self.first_name} !")
-            print(""" 
-            Que voulez vous faire ?
-            1 - Afficher vos informations personnelles
-            2 - Afficher vos notes 
-            q - Quitter l'application
-            """)
+            timeline_data = self.fetch_timeline()
+
+            table_data = [["Menu", "Derniers événements"]]
+            table_data.append(["1 - Voir vos informations          ", timeline_data[0]])
+            table_data.append(["2 - Voir vos notes", timeline_data[1]])
+            table_data.append(["q - Quitter l'application", timeline_data[2]])
+            table = AsciiTable(table_data)
+            print(table.table)
+
             choice = input(">>> ")
             if choice == "1": self.informations()
             elif choice == "2": self.show_grades()
