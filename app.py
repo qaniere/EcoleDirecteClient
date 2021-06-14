@@ -6,18 +6,23 @@ import platform
 import requests
 from terminaltables import AsciiTable
 
+
 class EcoleDirecteClient:
 
-    """ An "wonderfool" Ecole Directe unofficial client"""
+    """ An Ecole Directe unofficial client in the terminal"""
 
     def __init__(self, username = False, password = False):
 
         """ If username and password are entered in the constructor, they will not be requested to the user"""
+        self.clear_screen()
 
         if username == False or password == False:
+            print("Connexion à EcoleDirecte :")
             username = str(input("Nom d'utilisateur : "))
             password = getpass.getpass(prompt="Mot de passe : ")
+            self.clear_screen()
 
+        print("Connexion en cours...")
         login_status= self.login(username, password)
 
         if login_status == "Connection ok": 
@@ -27,7 +32,19 @@ class EcoleDirecteClient:
         else: 
             print("Erreur serveur")
 
-    def login(self, username:str, password:str):
+    
+    def clear_screen(self):
+
+        """ Method which clear screen on every os"""
+
+        if platform.system() == "Windows":
+            command = "cls"
+        else: 
+            command = "clear"
+        os.system(command)
+
+
+    def login(self, username:str, password:str) -> str:
 
         """ Method which send credentials to server. Take the username and password in str format in argument. Return a json 
         string with requests code and account data"""
@@ -37,7 +54,7 @@ class EcoleDirecteClient:
         server_response = requests.post(backend_url, data=connection_data)
 
         if json.loads(server_response.text)["code"] == 200:
-        #HTTP code which mean the request was succesfull and credentials was valid
+        #The request was succesfull and credentials was valid
 
             received_data = json.loads(server_response.text)
             self.account_token = received_data["token"]
@@ -46,12 +63,81 @@ class EcoleDirecteClient:
 
         elif json.loads(server_response.text)["code"] == 505:
         #HTTP requests was succesful but credentials are invaldids
-
-            return "Invalids credentials"
-        
+            return "Invalids credentials"    
         else:
             print(server_response.text)
             return "Server error"
+
+
+    def menu(self):
+
+        """ Method which contain the menu of the app """
+
+        app_is_running = True
+        while app_is_running:
+            self.clear_screen()
+            print("Récupération des données en cours...")
+            timeline_data = self.fetch_timeline()
+            self.clear_screen()
+
+            print(f"Bienvenue {self.account_data['prenom'].lower().capitalize()}.")
+            table_data = [["Menu", "Derniers événements"]]
+            table_data.append(["1 - Voir vos informations          ", timeline_data[0]])
+            table_data.append(["2 - Voir vos notes", timeline_data[1]])
+            table_data.append(["q - Quitter l'application", timeline_data[2]])
+            table = AsciiTable(table_data)
+            print(table.table)
+
+            choice = input(">>> ")
+            if choice == "1": self.display_informations()
+            elif choice == "2": self.show_grades()
+            elif choice == "q": exit(0)
+
+
+    def fetch_timeline(self):
+
+        """ Method which return the four last elements of timeline """
+
+        url = 'https://api.ecoledirecte.com/v3/eleves/' + str(self.account_data['id']) + '/timeline.awp?verbe=get&'
+        request_data = 'data={"token": "' + self.account_token + '"}'
+        request = requests.post(url, data=request_data)
+        data = json.loads(request.text)
+        try:
+            data = data["data"]
+        except:
+            result = ["Timeline is not working currently", "Timeline is not working currently", "Timeline is not working currently", "Timeline is not working currently"]
+        else:
+
+            result = []
+            for i in range(4):
+
+                event_type = data[i]["typeElement"]
+                if event_type == "Note":
+                    final_string = f"- Nouvelle note en {data[i]['contenu'].lower().capitalize()}"
+                elif event_type == "VieScolaire":
+                    final_string = f"- {data[i]['titre']} du {data[i]['date']} ({data[i]['contenu']})"
+                else:
+                    final_string = "Event not implemented. Please open Github issue"
+                result.append(final_string)
+
+        return result
+
+
+    def display_informations(self):
+
+        self.clear_screen()
+        print("Vos informations EcoleDirecte :")
+        print()
+        print("  Identité :", self.account_data["prenom"].lower().capitalize(), self.account_data["nom"].upper())
+        print("  Classe :", self.account_data["profile"]["classe"]["libelle"])
+        print("  Numéro RNE de l'établissement :", self.account_data["profile"]["rneEtablissement"])
+        print("  Dernière connexion :", self.account_data["lastConnexion"])
+        print("  Adresse e-mail :", self.account_data["email"])
+        print("  Numéro de téléphone : ", self.account_data["profile"]["telPortable"])
+        print("  Régime :", self.account_data["modules"][10]["params"]["regime"])
+        print("  Numéro de carte de cantine :", self.account_data["modules"][0]["params"]["numeroBadge"])
+        print()
+        input("Appuyez sur entrée pour continuer...")
 
 
     def get_grades(self):
@@ -65,71 +151,10 @@ class EcoleDirecteClient:
         self.grades = data["data"]["notes"]
 
     
-    def fetch_timeline(self):
-
-        """ Method which return the four last elements of timeline """
-
-        url = 'https://api.ecoledirecte.com/v3/eleves/' + str(self.account_data['id']) + '/timeline.awp?verbe=get&'
-        data = 'data={"token": "' + self.account_token + '"}'
-        request = requests.post(url, data=data)
-        data = json.loads(request.text)
-        data = data["data"]
-        result = []
-        for i in range(4):
-            event_type = data[i]["typeElement"]
-            if event_type == "Note":
-                final_string = f"- Nouvelle note en {data[i]['soustitre'].lower().capitalize()}"
-            elif event_type == "VieScolaire":
-                final_string = f"- {data[i]['titre']} du {data[i]['date']} ({data[i]['contenu']})"
-            else:
-                final_string = "Event not implemted. Please open Github issue"
-            result.append(final_string)
-        return result
 
 
-    def clear_screen(self):
 
-        """ Method which clear screen, on Windows or Linux"""
-
-        if platform.system() == "Windows": command = "cls"
-        else: command = "clear"
-        os.system(command)
-
-
-    def menu(self):
-
-        """ Method which contain the menu of the app """
-
-        app_is_running = True
-        while app_is_running:
-            self.clear_screen()
-            timeline_data = self.fetch_timeline()
-
-            table_data = [["Menu", "Derniers événements"]]
-            table_data.append(["1 - Voir vos informations          ", timeline_data[0]])
-            table_data.append(["2 - Voir vos notes", timeline_data[1]])
-            table_data.append(["q - Quitter l'application", timeline_data[2]])
-            table = AsciiTable(table_data)
-            print(table.table)
-
-            choice = input(">>> ")
-            if choice == "1": self.informations()
-            elif choice == "2": self.show_grades()
-            elif choice == "q": exit(0)
-
-
-    def informations(self):
-
-        self.clear_screen()
-
-        print("Vos informations EcoleDirecte :")
-        print("  Nom complet :", self.first_name, self.account_data["nom"].upper())
-        print("  Classe :", self.account_data["profile"]["classe"]["libelle"])
-        print("  Dernière connexion :", self.account_data["lastConnexion"]) #TODO : Refactor date format
-        print("  Adresse e-mail :", self.account_data["email"])
-        print("  Régime :", self.account_data["modules"][10]["params"]["regime"]) #TODO (Afficher les jours)
-        print("  Numéro de carte de cantine :", self.account_data["modules"][0]["params"]["numeroBadge"])
-        input("")
+    
 
 
     def show_grades(self):
